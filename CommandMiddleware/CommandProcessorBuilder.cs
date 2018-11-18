@@ -7,6 +7,7 @@ namespace CommandMiddleware
 {
     public delegate Task CommandMiddleware(object command, Func<Task> next);
     public delegate Task CommandHandler<in TCommand>(TCommand command);
+    public delegate Task CommandProcessor(object command);
 
     public class CommandProcessorBuilder
     {
@@ -71,7 +72,7 @@ namespace CommandMiddleware
         public CommandProcessor Build()
         {
             var pipeline = _middleware.Any() ? CreatePipeline(0) : Execute;
-            return new CommandProcessor(pipeline);
+            return c => pipeline(c);
         }
     }
 }

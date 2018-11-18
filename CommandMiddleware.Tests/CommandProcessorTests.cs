@@ -23,7 +23,7 @@ namespace CommandMiddleware.Tests
                 .Build();
             
             var command = new TestCommand();
-            await processor.Handle(command);
+            await processor(command);
             
             handled.Should().Be(command);
         }
@@ -32,7 +32,7 @@ namespace CommandMiddleware.Tests
         public void ThrowsExceptionIfNoHandlerForCommand()
         {
             var processor = new CommandProcessorBuilder().Build();
-            Func<Task> action = () => processor.Handle(new TestCommand());
+            Func<Task> action = () => processor(new TestCommand());
 
             action.Should().Throw<InvalidOperationException>();
         }
@@ -50,7 +50,7 @@ namespace CommandMiddleware.Tests
                 .Handle<TestCommand>(_ => Task.CompletedTask)
                 .Build();
 
-            await processor.Handle(new TestCommand());
+            await processor(new TestCommand());
             middlewareExecuted.Should().BeTrue();
         }
 
@@ -67,7 +67,7 @@ namespace CommandMiddleware.Tests
                 })
                 .Build();
 
-            await processor.Handle(new TestCommand());
+            await processor(new TestCommand());
             handlerExecuted.Should().BeFalse();
         }
 
