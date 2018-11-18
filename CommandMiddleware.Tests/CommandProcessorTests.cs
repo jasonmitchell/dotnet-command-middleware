@@ -12,7 +12,7 @@ namespace CommandMiddleware.Tests
         {
             object handled = null;
             
-            var processor = new CommandProcessorBuilder()
+            var processor = CommandProcessor
                 .Use((_, next) => next())
                 .Use((_, next) => next())
                 .Handle<TestCommand>(c =>
@@ -31,7 +31,10 @@ namespace CommandMiddleware.Tests
         [Fact]
         public void ThrowsExceptionIfNoHandlerForCommand()
         {
-            var processor = new CommandProcessorBuilder().Build();
+            var processor = CommandProcessor
+                .Use((_, next) => next())
+                .Build();
+            
             Func<Task> action = () => processor(new TestCommand());
 
             action.Should().Throw<InvalidOperationException>();
@@ -41,7 +44,7 @@ namespace CommandMiddleware.Tests
         public async Task ExecutesMiddleware()
         {
             var middlewareExecuted = false;
-            var processor = new CommandProcessorBuilder()
+            var processor = CommandProcessor
                 .Use(async (_, next) =>
                 {
                     middlewareExecuted = true;
@@ -58,7 +61,7 @@ namespace CommandMiddleware.Tests
         public async Task DoesNotExecuteHandlerIfMiddlewareDoesNotExecuteNext()
         {
             var handlerExecuted = false;
-            var processor = new CommandProcessorBuilder()
+            var processor = CommandProcessor
                 .Use((_, __) => Task.CompletedTask)
                 .Handle<TestCommand>(_ =>
                 {
