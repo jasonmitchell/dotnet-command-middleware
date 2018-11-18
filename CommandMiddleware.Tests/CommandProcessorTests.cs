@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Xunit;
@@ -41,7 +42,7 @@ namespace CommandMiddleware.Tests
         }
 
         [Fact]
-        public void ThrowsExceptionIfHandlerAlreadyExistsForCommand()
+        public void ThrowsExceptionWhenRegisteringDuplicateCommandHandlers()
         {
             var builder = CommandProcessor
                 .Handle<TestCommand>(_ => Task.CompletedTask);
@@ -68,6 +69,36 @@ namespace CommandMiddleware.Tests
         }
 
         [Fact]
+        public async Task ExecutesMiddlewareInOrderOfRegistration()
+        {
+            var middlewareExecuted = new List<int>();
+            var processor = CommandProcessor
+                .Use(async (_, next) =>
+                {
+                    middlewareExecuted.Add(1);
+                    await next();
+                })
+                .Use(async (_, next) =>
+                {
+                    middlewareExecuted.Add(2);
+                    await next();
+                })
+                .Use(async (_, next) =>
+                {
+                    middlewareExecuted.Add(3);
+                    await next();
+                })
+                .Handle<TestCommand>(_ => Task.CompletedTask)
+                .Build();
+
+            await processor(new TestCommand());
+
+            middlewareExecuted[0].Should().Be(1);
+            middlewareExecuted[1].Should().Be(2);
+            middlewareExecuted[2].Should().Be(3);
+        }
+
+        [Fact]
         public async Task DoesNotExecuteHandlerIfMiddlewareDoesNotExecuteNext()
         {
             var handlerExecuted = false;
@@ -82,6 +113,29 @@ namespace CommandMiddleware.Tests
 
             await processor(new TestCommand());
             handlerExecuted.Should().BeFalse();
+        }
+
+        [Fact]
+        public void ExceptionInMiddlewareBubblesUp()
+        {
+            var processor = CommandProcessor
+                .Use((_, __) => throw new Exception())
+                .Handle<TestCommand>(_ => Task.CompletedTask)
+                .Build();
+
+            Func<Task> action = () => processor(new TestCommand());
+            action.Should().Throw<Exception>();
+        }
+        
+        [Fact]
+        public void ExceptionInHandlerBubblesUp()
+        {
+            var processor = CommandProcessor
+                .Handle<TestCommand>(_ => throw new Exception())
+                .Build();
+
+            Func<Task> action = () => processor(new TestCommand());
+            action.Should().Throw<Exception>();
         }
 
         private class TestCommand { }
