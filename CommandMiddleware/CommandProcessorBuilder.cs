@@ -12,7 +12,22 @@ namespace CommandMiddleware
     {
         private readonly List<CommandMiddleware> _middleware = new List<CommandMiddleware>();
         private readonly Dictionary<Type, Func<object, Task>> _handlers = new Dictionary<Type, Func<object, Task>>();
+
+        public CommandProcessorBuilder()
+        {
+            Use(RequireHandler);
+        }
         
+        private async Task RequireHandler(object command, Func<Task> next)
+        {
+            if (!_handlers.ContainsKey(command.GetType()))
+            {
+                throw new InvalidOperationException($"Handler for {command.GetType().Name} not found");
+            }
+
+            await next();
+        }
+
         public CommandProcessorBuilder Use(CommandMiddleware middleware)
         {
             _middleware.Add(middleware);
@@ -56,7 +71,7 @@ namespace CommandMiddleware
         public CommandProcessor Build()
         {
             var pipeline = _middleware.Any() ? CreatePipeline(0) : Execute;
-            return new CommandProcessor(pipeline, _handlers.Keys);
+            return new CommandProcessor(pipeline);
         }
     }
 }
