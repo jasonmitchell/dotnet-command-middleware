@@ -41,6 +41,16 @@ namespace CommandMiddleware.Tests
         }
 
         [Fact]
+        public void ThrowsExceptionIfHandlerAlreadyExistsForCommand()
+        {
+            var builder = CommandProcessor
+                .Handle<TestCommand>(_ => Task.CompletedTask);
+
+            Action action = () => builder.Handle<TestCommand>(_ => Task.CompletedTask);
+            action.Should().Throw<Exception>();
+        }
+
+        [Fact]
         public async Task ExecutesMiddleware()
         {
             var middlewareExecuted = false;
