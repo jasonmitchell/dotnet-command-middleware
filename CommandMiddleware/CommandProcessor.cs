@@ -7,6 +7,7 @@ namespace CommandMiddleware
 {
     public delegate Task CommandMiddleware(object command, Func<Task> next);
     public delegate Task CommandHandler<in TCommand>(TCommand command);
+    public delegate Task ContextualCommandHandler<TCommand>(TCommand command, CommandContext<TCommand> context);
     public delegate Task CommandDelegate(object command);
 
     public class CommandProcessor : ICommandProcessorBuilder
@@ -36,6 +37,14 @@ namespace CommandMiddleware
             return builder;
         }
         
+        public static ICommandProcessorBuilder Handle<TCommand>(ContextualCommandHandler<TCommand> handler)
+        {
+            ICommandProcessorBuilder builder = new CommandProcessor();
+            builder.Handle(handler);
+
+            return builder;
+        }
+
         ICommandProcessorBuilder ICommandProcessorBuilder.Use(CommandMiddleware middleware)
         {
             _middleware.Add(middleware);
@@ -48,6 +57,12 @@ namespace CommandMiddleware
             return this;
         }
         
+        ICommandProcessorBuilder ICommandProcessorBuilder.Handle<TCommand>(ContextualCommandHandler<TCommand> handler)
+        {
+            _handlers.Add(typeof(TCommand), x => handler((TCommand) x, new CommandContext<TCommand>((TCommand)x)));
+            return this;
+        }
+        
         CommandDelegate ICommandProcessorBuilder.Build()
         {
             _middleware.Insert(0, RequireHandler);
@@ -55,7 +70,7 @@ namespace CommandMiddleware
             var pipeline = _middleware.Any() ? CreatePipeline(0) : Execute;
             return c => pipeline(c);
         }
-        
+
         private async Task RequireHandler(object command, Func<Task> next)
         {
             if (!_handlers.ContainsKey(command.GetType()))

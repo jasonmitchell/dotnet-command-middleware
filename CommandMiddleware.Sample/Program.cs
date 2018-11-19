@@ -21,7 +21,7 @@ namespace CommandMiddleware.Sample
             }
 
             await processor(new Checkout {Items = itemIds});
-
+            
             Console.ReadLine();
         }
 
