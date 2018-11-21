@@ -4,8 +4,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommandMiddleware", "Comman
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommandMiddleware.Tests", "CommandMiddleware.Tests\CommandMiddleware.Tests.csproj", "{E2634BD7-421D-480E-AB5E-BFCA18187D3E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommandMiddleware.Sample", "CommandMiddleware.Sample\CommandMiddleware.Sample.csproj", "{21952F8C-4DEE-4106-AD64-5726579465D6}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommandMiddleware.Sample.Web", "CommandMiddleware.Sample.Web\CommandMiddleware.Sample.Web.csproj", "{DFE82E50-0C56-4E82-A084-4B2460B9F1F2}"
 EndProject
 Global
@@ -22,10 +20,6 @@ Global
 		{E2634BD7-421D-480E-AB5E-BFCA18187D3E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E2634BD7-421D-480E-AB5E-BFCA18187D3E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E2634BD7-421D-480E-AB5E-BFCA18187D3E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{21952F8C-4DEE-4106-AD64-5726579465D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{21952F8C-4DEE-4106-AD64-5726579465D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{21952F8C-4DEE-4106-AD64-5726579465D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{21952F8C-4DEE-4106-AD64-5726579465D6}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DFE82E50-0C56-4E82-A084-4B2460B9F1F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DFE82E50-0C56-4E82-A084-4B2460B9F1F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DFE82E50-0C56-4E82-A084-4B2460B9F1F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
