@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using CommandMiddleware.Sample.Web.Commands;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -14,6 +15,7 @@ using Microsoft.Extensions.Options;
 
 namespace CommandMiddleware.Sample.Web
 {
+
     public class Startup
     {
         private readonly ILoggerFactory _loggerFactory;
@@ -35,8 +37,10 @@ namespace CommandMiddleware.Sample.Web
                 .Use((x, y) => LogCommand(x, y, _loggerFactory.CreateLogger(nameof(LogCommand))))
                 .Handle<AddItemToBasket>(handlers.Handle)
                 .Handle<Checkout>(handlers.Handle)
-                .Build();
-
+                .Build()
+                .AsHttpCommandDelegate();
+            
+            
             services.AddSingleton(commandProcessor);
         }
         

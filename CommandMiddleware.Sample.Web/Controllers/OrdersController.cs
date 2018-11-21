@@ -7,9 +7,9 @@ namespace CommandMiddleware.Sample.Web.Controllers
     [ApiController, Route("[controller]")]
     public class OrdersController : Controller
     {
-        private readonly CommandDelegate _commandProcessor;
+        private readonly HttpCommandDelegate _commandProcessor;
 
-        public OrdersController(CommandDelegate commandProcessor)
+        public OrdersController(HttpCommandDelegate commandProcessor)
         {
             _commandProcessor = commandProcessor;
         }
@@ -17,16 +17,13 @@ namespace CommandMiddleware.Sample.Web.Controllers
         [HttpPost, Route("add-item")]
         public async Task<ActionResult> AddItem(AddItemToBasket command)
         {
-            await _commandProcessor(command);
-            
-            return new CreatedResult("thingadded", null);
+            return await _commandProcessor(command, HttpContext);
         }
 
         [HttpPost, Route("checkout")]
         public async Task<ActionResult> Checkout(Checkout command)
         {
-            await _commandProcessor(command);
-            return new CreatedResult("thingcheckedout", null);
+            return await _commandProcessor(command, HttpContext);
         }
     }
 }
