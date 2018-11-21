@@ -13,13 +13,20 @@ namespace CommandMiddleware.Sample.Web.Controllers
         {
             _commandProcessor = commandProcessor;
         }
+        
+        [HttpPost, Route("add-item")]
+        public async Task<ActionResult> AddItem(AddItemToBasket command)
+        {
+            await _commandProcessor(command);
+            
+            return new CreatedResult("thingadded", null);
+        }
 
         [HttpPost, Route("checkout")]
         public async Task<ActionResult> Checkout(Checkout command)
         {
             await _commandProcessor(command);
-            
-            return new CreatedResult("hello/world", null);
+            return new CreatedResult("thingcheckedout", null);
         }
     }
 }

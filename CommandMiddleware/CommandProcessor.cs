@@ -6,22 +6,33 @@ using System.Threading.Tasks;
 namespace CommandMiddleware
 {
     public delegate Task CommandMiddleware(object command, Func<Task> next);
+    public delegate Task ContextualCommandMiddleware(object command, CommandContext context, Func<Task> next);
+    
     public delegate Task CommandHandler<in TCommand>(TCommand command);
-    public delegate Task ContextualCommandHandler<TCommand>(TCommand command, CommandContext<TCommand> context);
-    public delegate Task CommandDelegate(object command);
+    public delegate Task ContextualCommandHandler<in TCommand>(TCommand command, CommandContext context);
+    
+    public delegate Task<CommandContext> CommandDelegate(object command);
 
     public class CommandProcessor : ICommandProcessorBuilder
     {
-        private readonly List<CommandMiddleware> _middleware;
-        private readonly Dictionary<Type, Func<object, Task>> _handlers;
+        private readonly List<ContextualCommandMiddleware> _middleware;
+        private readonly Dictionary<Type, Func<object, CommandContext, Task>> _handlers;
 
         private CommandProcessor()
         {
-            _middleware = new List<CommandMiddleware>();
-            _handlers = new Dictionary<Type, Func<object, Task>>();
+            _middleware = new List<ContextualCommandMiddleware>();
+            _handlers = new Dictionary<Type, Func<object, CommandContext, Task>>();
         }
 
         public static ICommandProcessorBuilder Use(CommandMiddleware middleware)
+        {
+            ICommandProcessorBuilder builder = new CommandProcessor();
+            builder.Use(middleware);
+
+            return builder;
+        }
+        
+        public static ICommandProcessorBuilder Use(ContextualCommandMiddleware middleware)
         {
             ICommandProcessorBuilder builder = new CommandProcessor();
             builder.Use(middleware);
@@ -47,31 +58,38 @@ namespace CommandMiddleware
 
         ICommandProcessorBuilder ICommandProcessorBuilder.Use(CommandMiddleware middleware)
         {
+            _middleware.Add((c, _, next) => middleware(c, next));
+            return this;
+        }
+        
+        ICommandProcessorBuilder ICommandProcessorBuilder.Use(ContextualCommandMiddleware middleware)
+        {
             _middleware.Add(middleware);
             return this;
         }
 
         ICommandProcessorBuilder ICommandProcessorBuilder.Handle<TCommand>(CommandHandler<TCommand> handler)
         {
-            _handlers.Add(typeof(TCommand), x => handler((TCommand) x));
+            _handlers.Add(typeof(TCommand), (c, _) => handler((TCommand) c));
             return this;
         }
         
         ICommandProcessorBuilder ICommandProcessorBuilder.Handle<TCommand>(ContextualCommandHandler<TCommand> handler)
         {
-            _handlers.Add(typeof(TCommand), x => handler((TCommand) x, new CommandContext<TCommand>((TCommand)x)));
+            _handlers.Add(typeof(TCommand), (c, ctx) => handler((TCommand) c, ctx));
             return this;
         }
         
         CommandDelegate ICommandProcessorBuilder.Build()
         {
             _middleware.Insert(0, RequireHandler);
+            _middleware.Insert(1, Completion);
             
             var pipeline = _middleware.Any() ? CreatePipeline(0) : Execute;
-            return c => pipeline(c);
+            return c => pipeline(c, new CommandContext());
         }
 
-        private async Task RequireHandler(object command, Func<Task> next)
+        private async Task RequireHandler(object command, CommandContext context, Func<Task> next)
         {
             if (!_handlers.ContainsKey(command.GetType()))
             {
@@ -81,32 +99,42 @@ namespace CommandMiddleware
             await next();
         }
 
-        private Func<object, Task> CreatePipeline(int index)
+        private async Task Completion(object command, CommandContext context, Func<Task> next)
         {
-            return async c =>
+            await next();
+            context.Complete();
+        }
+
+        private Func<object, CommandContext, Task<CommandContext>> CreatePipeline(int index)
+        {
+            return async (command, context) =>
             {
                 Func<Task> next;
 
                 if (index >= _middleware.Count - 1)
                 {
-                    next = () => Execute(c);
+                    next = () => Execute(command, context);
                 }
                 else
                 {
                     var nextIndex = index + 1;
                     var nextMiddleware = CreatePipeline(nextIndex);
-                    next = () => nextMiddleware(c);
+                    next = () => nextMiddleware(command, context);
                 }
                 
                 var middleware = _middleware[index];
-                await middleware(c, next);
+                await middleware(command, context, next);
+
+                return context;
             };
         }
         
-        private async Task Execute(object c)
+        private async Task<CommandContext> Execute(object c, CommandContext context)
         {
             var handler = _handlers[c.GetType()];
-            await handler(c);
+            await handler(c, context);
+
+            return context;
         }
     }
 }

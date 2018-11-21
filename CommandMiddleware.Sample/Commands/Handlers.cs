@@ -11,7 +11,7 @@ namespace CommandMiddleware.Sample.Commands
             return Task.CompletedTask;
         }
 
-        public static Task Handle(Checkout command, CommandContext<Checkout> context)
+        public static Task Handle(Checkout command, CommandContext context)
         {
             Console.WriteLine($"\tPlacing order for {command.Items.Count} items");
 

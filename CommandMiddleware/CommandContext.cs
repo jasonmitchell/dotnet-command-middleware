@@ -1,12 +1,17 @@
 namespace CommandMiddleware
 {
-    public class CommandContext<TCommand>
+    public class CommandContext
     {
-        public TCommand Command { get; }
+        public bool RanToCompletion { get; private set; }
+        public object Result { get; private set; }
 
-        public CommandContext(TCommand command)
+        public void Complete(object result = null)
         {
-            Command = command;
+            if (!RanToCompletion)
+            {
+                RanToCompletion = true;
+                Result = result;
+            }
         }
     }
 }
