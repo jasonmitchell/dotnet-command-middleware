@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace CommandMiddleware
@@ -22,6 +21,8 @@ namespace CommandMiddleware
         {
             _middleware = new List<ContextualCommandMiddleware>();
             _handlers = new Dictionary<Type, Func<object, CommandContext, Task>>();
+            
+            _middleware.Add(RequireHandler);
         }
 
         public static ICommandProcessorBuilder Use(CommandMiddleware middleware)
@@ -82,27 +83,10 @@ namespace CommandMiddleware
         
         CommandDelegate ICommandProcessorBuilder.Build()
         {
-            _middleware.Insert(0, RequireHandler);
-            _middleware.Insert(1, Completion);
+            _middleware.Add(ExecuteCommand);
             
-            var pipeline = _middleware.Any() ? CreatePipeline(0) : Execute;
+            var pipeline = CreatePipeline(0);
             return c => pipeline(c, new CommandContext());
-        }
-
-        private async Task RequireHandler(object command, CommandContext context, Func<Task> next)
-        {
-            if (!_handlers.ContainsKey(command.GetType()))
-            {
-                throw new InvalidOperationException($"Handler for {command.GetType().Name} not found");
-            }
-
-            await next();
-        }
-
-        private async Task Completion(object command, CommandContext context, Func<Task> next)
-        {
-            await next();
-            context.Complete();
         }
 
         private Func<object, CommandContext, Task<CommandContext>> CreatePipeline(int index)
@@ -113,7 +97,7 @@ namespace CommandMiddleware
 
                 if (index >= _middleware.Count - 1)
                 {
-                    next = () => Execute(command, context);
+                    next = () => Task.CompletedTask;
                 }
                 else
                 {
@@ -129,12 +113,22 @@ namespace CommandMiddleware
             };
         }
         
-        private async Task<CommandContext> Execute(object c, CommandContext context)
+        private async Task RequireHandler(object command, CommandContext context, Func<Task> next)
         {
-            var handler = _handlers[c.GetType()];
-            await handler(c, context);
+            if (!_handlers.ContainsKey(command.GetType()))
+            {
+                throw new InvalidOperationException($"Handler for {command.GetType().Name} not found");
+            }
 
-            return context;
+            await next();
+        }
+
+        private async Task ExecuteCommand(object command, CommandContext context, Func<Task> _)
+        {
+            var handler = _handlers[command.GetType()];
+            await handler(command, context);
+            
+            context.Complete();
         }
     }
 }
