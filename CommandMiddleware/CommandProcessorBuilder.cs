@@ -7,15 +7,12 @@ namespace CommandMiddleware
     public delegate Task CommandMiddleware(object command, Func<Task> next);
     public delegate Task ContextualCommandMiddleware(object command, CommandContext context, Func<Task> next);
 
-    public delegate Task CommandHandler<in TCommand>(TCommand command);
-    public delegate Task ContextualCommandHandler<in TCommand>(TCommand command, CommandContext context);
-
     public delegate Task<CommandContext> CommandDelegate(object command);
 
     public class CommandProcessorBuilder
     {
         private readonly List<ContextualCommandMiddleware> _middleware = new List<ContextualCommandMiddleware>();
-        private readonly Dictionary<Type, Func<object, CommandContext, Task>> _handlers = new Dictionary<Type, Func<object, CommandContext, Task>>();
+        private readonly Dictionary<Type, Func<object, CommandContext, Task<object>>> _handlers = new Dictionary<Type, Func<object, CommandContext, Task<object>>>();
 
         public CommandProcessorBuilder()
         {
@@ -31,10 +28,24 @@ namespace CommandMiddleware
             return this;
         }
 
-        public CommandProcessorBuilder Handle<TCommand>(CommandHandler<TCommand> handler) =>
+        public CommandProcessorBuilder Handle<TCommand>(Func<TCommand, Task> handler) =>
+            Handle<TCommand>(async (c, _) =>
+            {
+                await handler(c);
+                return null;
+            });
+        
+        public CommandProcessorBuilder Handle<TCommand>(Func<TCommand, Task<object>> handler) =>
             Handle<TCommand>((c, _) => handler(c));
 
-        public CommandProcessorBuilder Handle<TCommand>(ContextualCommandHandler<TCommand> handler)
+        public CommandProcessorBuilder Handle<TCommand>(Func<TCommand, CommandContext, Task> handler) =>
+            Handle<TCommand>(async (c, ctx) =>
+            {
+                await handler(c, ctx);
+                return null;
+            });
+
+        public CommandProcessorBuilder Handle<TCommand>(Func<TCommand, CommandContext, Task<object>> handler)
         {
             if (_handlers.ContainsKey(typeof(TCommand)))
             {
@@ -90,8 +101,13 @@ namespace CommandMiddleware
         private async Task ExecuteCommand(object command, CommandContext context, Func<Task> _)
         {
             var handler = _handlers[command.GetType()];
-            await handler(command, context);
+            var result = await handler(command, context);
 
+            if (result != null)
+            {
+                context.WithResult(result);
+            }
+            
             context.Complete();
         }
     }

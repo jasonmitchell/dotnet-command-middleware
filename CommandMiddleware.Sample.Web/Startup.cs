@@ -30,8 +30,8 @@ namespace CommandMiddleware.Sample.Web
             var handlers = new Handlers(_loggerFactory.CreateLogger<Handlers>());
             var commandProcessor = new CommandProcessorBuilder()
                 .Use((x, y) => LogCommand(x, y, _loggerFactory.CreateLogger(nameof(LogCommand))))
-                .Handle<AddItemToBasket>(handlers.Handle)
-                .Handle<Checkout>(handlers.Handle)
+                .Handle<AddItemToBasket>(c => handlers.Handle(c))
+                .Handle<Checkout>((c, ctx) => handlers.Handle(c, ctx))
                 .Build()
                 .AsHttpCommandDelegate();
             
