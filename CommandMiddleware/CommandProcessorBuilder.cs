@@ -12,12 +12,12 @@ namespace CommandMiddleware
     
     public delegate Task<CommandContext> CommandDelegate(object command);
 
-    public class CommandProcessor : ICommandProcessorBuilder
+    public class CommandProcessorBuilder
     {
         private readonly List<ContextualCommandMiddleware> _middleware;
         private readonly Dictionary<Type, Func<object, CommandContext, Task>> _handlers;
 
-        private CommandProcessor()
+        public CommandProcessorBuilder()
         {
             _middleware = new List<ContextualCommandMiddleware>();
             _handlers = new Dictionary<Type, Func<object, CommandContext, Task>>();
@@ -25,63 +25,31 @@ namespace CommandMiddleware
             _middleware.Add(RequireHandler);
         }
 
-        public static ICommandProcessorBuilder Use(CommandMiddleware middleware)
-        {
-            ICommandProcessorBuilder builder = new CommandProcessor();
-            builder.Use(middleware);
-
-            return builder;
-        }
-        
-        public static ICommandProcessorBuilder Use(ContextualCommandMiddleware middleware)
-        {
-            ICommandProcessorBuilder builder = new CommandProcessor();
-            builder.Use(middleware);
-
-            return builder;
-        }
-
-        public static ICommandProcessorBuilder Handle<TCommand>(CommandHandler<TCommand> handler)
-        {
-            ICommandProcessorBuilder builder = new CommandProcessor();
-            builder.Handle(handler);
-
-            return builder;
-        }
-        
-        public static ICommandProcessorBuilder Handle<TCommand>(ContextualCommandHandler<TCommand> handler)
-        {
-            ICommandProcessorBuilder builder = new CommandProcessor();
-            builder.Handle(handler);
-
-            return builder;
-        }
-
-        ICommandProcessorBuilder ICommandProcessorBuilder.Use(CommandMiddleware middleware)
+        public CommandProcessorBuilder Use(CommandMiddleware middleware)
         {
             _middleware.Add((c, _, next) => middleware(c, next));
             return this;
         }
         
-        ICommandProcessorBuilder ICommandProcessorBuilder.Use(ContextualCommandMiddleware middleware)
+        public CommandProcessorBuilder Use(ContextualCommandMiddleware middleware)
         {
             _middleware.Add(middleware);
             return this;
         }
 
-        ICommandProcessorBuilder ICommandProcessorBuilder.Handle<TCommand>(CommandHandler<TCommand> handler)
+        public CommandProcessorBuilder Handle<TCommand>(CommandHandler<TCommand> handler)
         {
             _handlers.Add(typeof(TCommand), (c, _) => handler((TCommand) c));
             return this;
         }
         
-        ICommandProcessorBuilder ICommandProcessorBuilder.Handle<TCommand>(ContextualCommandHandler<TCommand> handler)
+        public CommandProcessorBuilder Handle<TCommand>(ContextualCommandHandler<TCommand> handler)
         {
             _handlers.Add(typeof(TCommand), (c, ctx) => handler((TCommand) c, ctx));
             return this;
         }
         
-        CommandDelegate ICommandProcessorBuilder.Build()
+        public CommandDelegate Build()
         {
             _middleware.Add(ExecuteCommand);
             
