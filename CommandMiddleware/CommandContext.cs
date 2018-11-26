@@ -1,17 +1,27 @@
+using System;
+
 namespace CommandMiddleware
 {
     public class CommandContext
     {
+        public Type CommandType { get; }
+        
         public bool RanToCompletion { get; private set; }
         public object Result { get; private set; }
 
-        public void Complete(object result = null)
+        public CommandContext(Type commandType)
         {
-            if (!RanToCompletion)
-            {
-                RanToCompletion = true;
-                Result = result;
-            }
+            CommandType = commandType;
+        }
+
+        public void WithResult(object result)
+        {
+            Result = result;
+        }
+
+        internal void Complete()
+        {
+            RanToCompletion = true;
         }
     }
 }

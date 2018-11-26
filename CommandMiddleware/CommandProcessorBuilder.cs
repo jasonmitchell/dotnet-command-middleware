@@ -54,7 +54,7 @@ namespace CommandMiddleware
             _middleware.Add(ExecuteCommand);
             
             var pipeline = CreatePipeline(0);
-            return c => pipeline(c, new CommandContext());
+            return c => pipeline(c, new CommandContext(c.GetType()));
         }
 
         private Func<object, CommandContext, Task<CommandContext>> CreatePipeline(int index)

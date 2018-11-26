@@ -23,7 +23,7 @@ namespace CommandMiddleware.Sample.Web.Commands
         {
             _logger.LogInformation($"Placing order for {command.Items.Count} items");
             
-            context.Complete("Hello world");
+            context.WithResult("Hello world");
             return Task.CompletedTask;
         }
     }
