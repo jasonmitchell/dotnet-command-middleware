@@ -38,7 +38,7 @@ namespace CommandMiddleware.Tests
             
             Func<Task> action = () => processor(new TestCommand());
 
-            action.Should().Throw<InvalidOperationException>();
+            action.Should().Throw<CommandHandlerNotFoundException>();
         }
 
         [Fact]
@@ -48,7 +48,7 @@ namespace CommandMiddleware.Tests
                 .Handle<TestCommand>(_ => Task.CompletedTask);
 
             Action action = () => builder.Handle<TestCommand>(_ => Task.CompletedTask);
-            action.Should().Throw<Exception>();
+            action.Should().Throw<CommandHandlerAlreadyRegisteredException>();
         }
 
         [Fact]
