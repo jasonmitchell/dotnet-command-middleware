@@ -19,12 +19,12 @@ namespace CommandMiddleware.Sample.Web.Commands
             return Task.CompletedTask;
         }
 
-        public Task Handle(Checkout command, CommandContext context)
+        public async Task<string> Handle(Checkout command)
         {
             _logger.LogInformation($"Placing order for {command.Items.Count} items");
-            
-            context.WithResult("Hello world");
-            return Task.CompletedTask;
+
+            await Task.CompletedTask;
+            return "Hello world";
         }
     }
 }
