@@ -1,6 +1,7 @@
-using System;
 using System.Threading.Tasks;
+using CommandMiddleware.Sample.Web.Domain;
 using Microsoft.Extensions.Logging;
+using OneOf;
 
 namespace CommandMiddleware.Sample.Web.Commands
 {
@@ -19,7 +20,7 @@ namespace CommandMiddleware.Sample.Web.Commands
             return Task.CompletedTask;
         }
 
-        public async Task<string> Handle(Checkout command)
+        public async Task<OneOf<string, DomainError>> Handle(Checkout command)
         {
             _logger.LogInformation($"Placing order for {command.Items.Count} items");
 

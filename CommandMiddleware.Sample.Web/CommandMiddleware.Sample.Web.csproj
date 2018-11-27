@@ -5,13 +5,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Folder Include="Domain" />
         <Folder Include="wwwroot\" />
     </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.App" />
         <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.1.2" PrivateAssets="All" />
+        <PackageReference Include="OneOf" Version="2.1.127" />
     </ItemGroup>
 
     <ItemGroup>

@@ -23,5 +23,10 @@ namespace CommandMiddleware
         {
             RanToCompletion = true;
         }
+
+        public T ResultAs<T>()
+        {
+            return (T) Result;
+        }
     }
 }
