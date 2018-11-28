@@ -4,37 +4,40 @@ using System.Threading.Tasks;
 
 namespace CommandMiddleware
 {
-    public delegate Task CommandMiddleware(object command, Func<Task> next);
-    public delegate Task ContextualCommandMiddleware(object command, CommandContext context, Func<Task> next);
-
-    public delegate Task CommandHandler<in TCommand>(TCommand command);
-    public delegate Task ContextualCommandHandler<in TCommand>(TCommand command, CommandContext context);
-
     public delegate Task<CommandContext> CommandDelegate(object command);
 
-    public class CommandProcessorBuilder
+    public class CommandProcessor
     {
-        private readonly List<ContextualCommandMiddleware> _middleware = new List<ContextualCommandMiddleware>();
+        public delegate Task Middleware(object command, Func<Task> next);
+        public delegate Task MiddlewareWithContext(object command, CommandContext context, Func<Task> next);
+        public delegate Task Handler<in TCommand>(TCommand command);
+        public delegate Task HandlerWithContext<in TCommand>(TCommand command, CommandContext context);
+        
+        private readonly List<MiddlewareWithContext> _middleware = new List<MiddlewareWithContext>();
         private readonly Dictionary<Type, Func<object, CommandContext, Task>> _handlers = new Dictionary<Type, Func<object, CommandContext, Task>>();
 
-        public CommandProcessorBuilder()
+        public CommandProcessor()
         {
             _middleware.Add(RequireHandler);
         }
 
-        public CommandProcessorBuilder Use(CommandMiddleware middleware) => 
-            Use((c, _, next) => middleware(c, next));
+        public CommandProcessor Use(Middleware middleware)
+        {
+            return Use((c, _, next) => middleware(c, next));
+        }
 
-        public CommandProcessorBuilder Use(ContextualCommandMiddleware middleware)
+        public CommandProcessor Use(MiddlewareWithContext middleware)
         {
             _middleware.Add(middleware);
             return this;
         }
 
-        public CommandProcessorBuilder Handle<TCommand>(CommandHandler<TCommand> handler) =>
-            Handle<TCommand>((c, _) => handler(c));
+        public CommandProcessor Handle<TCommand>(Handler<TCommand> handler)
+        {
+            return Handle<TCommand>((c, _) => handler(c));
+        }
 
-        public CommandProcessorBuilder Handle<TCommand>(ContextualCommandHandler<TCommand> handler)
+        public CommandProcessor Handle<TCommand>(HandlerWithContext<TCommand> handler)
         {
             if (_handlers.ContainsKey(typeof(TCommand)))
             {
