@@ -12,7 +12,7 @@ namespace CommandMiddleware.Tests
         public async Task ExecutesMiddleware()
         {
             var middlewareExecuted = false;
-            var pipeline = new PipelineBuilder()
+            var pipeline = new Pipeline()
                 .Use(async (_, ctx, next) =>
                 {
                     await next();
@@ -32,7 +32,7 @@ namespace CommandMiddleware.Tests
         public async Task ExecutesMiddlewareInOrderOfRegistration()
         {
             var middlewareExecuted = new List<int>();
-            var pipeline = new PipelineBuilder()
+            var pipeline = new Pipeline()
                 .Use(async (_, next) =>
                 {
                     middlewareExecuted.Add(1);
@@ -52,15 +52,40 @@ namespace CommandMiddleware.Tests
 
             await pipeline(new TestInput());
 
-            middlewareExecuted[0].Should().Be(1);
-            middlewareExecuted[1].Should().Be(2);
-            middlewareExecuted[2].Should().Be(3);
+            middlewareExecuted.Should().BeEquivalentTo(new[] {1, 2, 3});
+        }
+        
+        [Fact]
+        public async Task DoesNotContinueExecutingIfMiddlewareDoesNotExecuteNext()
+        {
+            var middlewareExecuted = new List<int>();
+            var pipeline = new Pipeline()
+                .Use(async (_, next) =>
+                {
+                    middlewareExecuted.Add(1);
+                    await next();
+                })
+                .Use((_, next) =>
+                {
+                    middlewareExecuted.Add(2);
+                    return Task.CompletedTask;
+                })
+                .Use(async (_, next) =>
+                {
+                    middlewareExecuted.Add(3);
+                    await next();
+                })
+                .Build();
+
+            await pipeline(new TestInput());
+
+            middlewareExecuted.Should().BeEquivalentTo(new[] {1, 2});
         }
         
         [Fact]
         public void ExceptionInMiddlewareBubblesUp()
         {
-            var pipeline = new PipelineBuilder()
+            var pipeline = new Pipeline()
                 .Use((_, __) => throw new Exception())
                 .Build();
 

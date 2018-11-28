@@ -2,17 +2,14 @@ using System;
 
 namespace CommandMiddleware
 {
-    public class CommandContext
+    public class CommandContext : Pipeline.Context
     {
-        public Type CommandType { get; }
+        public Type CommandType => Input.GetType();
         
         public bool RanToCompletion { get; private set; }
         public object Result { get; private set; }
-
-        public CommandContext(Type commandType)
-        {
-            CommandType = commandType;
-        }
+        
+        public CommandContext(object input) : base(input) {}
 
         public void WithResult(object result)
         {

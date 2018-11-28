@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Xunit;
@@ -13,10 +12,15 @@ namespace CommandMiddleware.Tests
         {
             object handled = null;
             
-            var processor = new CommandProcessorBuilder()
+            var processor = new CommandProcessor()
                 .Use((_, next) => next())
                 .Use((_, next) => next())
                 .Handle<TestCommand>(c =>
+                {
+                    handled = c;
+                    return Task.CompletedTask;
+                })
+                .Handle<OtherTestCommand>((c, ctx) =>
                 {
                     handled = c;
                     return Task.CompletedTask;
@@ -32,7 +36,7 @@ namespace CommandMiddleware.Tests
         [Fact]
         public void ThrowsExceptionIfNoHandlerForCommand()
         {
-            var processor = new CommandProcessorBuilder()
+            var processor = new CommandProcessor()
                 .Use((_, next) => next())
                 .Build();
             
@@ -44,7 +48,7 @@ namespace CommandMiddleware.Tests
         [Fact]
         public void ThrowsExceptionWhenRegisteringDuplicateCommandHandlers()
         {
-            var builder = new CommandProcessorBuilder()
+            var builder = new CommandProcessor()
                 .Handle<TestCommand>(_ => Task.CompletedTask);
 
             Action action = () => builder.Handle<TestCommand>(_ => Task.CompletedTask);
@@ -52,57 +56,10 @@ namespace CommandMiddleware.Tests
         }
 
         [Fact]
-        public async Task ExecutesMiddleware()
-        {
-            var middlewareExecuted = false;
-            var processor = new CommandProcessorBuilder()
-                .Use(async (_, next) =>
-                {
-                    middlewareExecuted = true;
-                    await next();
-                })
-                .Handle<TestCommand>(_ => Task.CompletedTask)
-                .Build();
-
-            await processor(new TestCommand());
-            middlewareExecuted.Should().BeTrue();
-        }
-
-        [Fact]
-        public async Task ExecutesMiddlewareInOrderOfRegistration()
-        {
-            var middlewareExecuted = new List<int>();
-            var processor = new CommandProcessorBuilder()
-                .Use(async (_, next) =>
-                {
-                    middlewareExecuted.Add(1);
-                    await next();
-                })
-                .Use(async (_, next) =>
-                {
-                    middlewareExecuted.Add(2);
-                    await next();
-                })
-                .Use(async (_, next) =>
-                {
-                    middlewareExecuted.Add(3);
-                    await next();
-                })
-                .Handle<TestCommand>(_ => Task.CompletedTask)
-                .Build();
-
-            await processor(new TestCommand());
-
-            middlewareExecuted[0].Should().Be(1);
-            middlewareExecuted[1].Should().Be(2);
-            middlewareExecuted[2].Should().Be(3);
-        }
-
-        [Fact]
         public async Task DoesNotExecuteHandlerIfMiddlewareDoesNotExecuteNext()
         {
             var handlerExecuted = false;
-            var processor = new CommandProcessorBuilder()
+            var processor = new CommandProcessor()
                 .Use((_, __) => Task.CompletedTask)
                 .Handle<TestCommand>(_ =>
                 {
@@ -114,23 +71,11 @@ namespace CommandMiddleware.Tests
             await processor(new TestCommand());
             handlerExecuted.Should().BeFalse();
         }
-
-        [Fact]
-        public void ExceptionInMiddlewareBubblesUp()
-        {
-            var processor = new CommandProcessorBuilder()
-                .Use((_, __) => throw new Exception())
-                .Handle<TestCommand>(_ => Task.CompletedTask)
-                .Build();
-
-            Func<Task> action = () => processor(new TestCommand());
-            action.Should().Throw<Exception>();
-        }
         
         [Fact]
         public void ExceptionInHandlerBubblesUp()
         {
-            var processor = new CommandProcessorBuilder()
+            var processor = new CommandProcessor()
                 .Handle<TestCommand>(_ => throw new Exception())
                 .Build();
 
@@ -139,5 +84,6 @@ namespace CommandMiddleware.Tests
         }
 
         private class TestCommand { }
+        private class OtherTestCommand { }
     }
 }

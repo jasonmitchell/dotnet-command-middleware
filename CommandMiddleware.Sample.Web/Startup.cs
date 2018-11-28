@@ -28,12 +28,11 @@ namespace CommandMiddleware.Sample.Web
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
             var handlers = new Handlers(_loggerFactory.CreateLogger<Handlers>());
-            var commandProcessor = new CommandProcessorBuilder()
+            var commandProcessor = new CommandProcessor()
                 .Use((x, y) => LogCommand(x, y, _loggerFactory.CreateLogger(nameof(LogCommand))))
                 .Handle<AddItemToBasket>(handlers.Handle)
                 .Handle<Checkout>(handlers.Handle)
-                .Build()
-                .AsHttpCommandDelegate();
+                .Build();
             
             
             services.AddSingleton(commandProcessor);
