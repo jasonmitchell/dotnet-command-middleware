@@ -94,8 +94,6 @@ namespace CommandMiddleware
         {
             var handler = _handlers[command.GetType()];
             await handler(command, context);
-
-            context.Complete();
         }
     }
 }
