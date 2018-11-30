@@ -32,9 +32,7 @@ namespace CommandMiddleware.Sample.Web
                 .Use((x, y) => LogCommand(x, y, _loggerFactory.CreateLogger(nameof(LogCommand))))
                 .Handle<AddItemToBasket>(handlers.Handle)
                 .Handle<Checkout>(handlers.Handle)
-                .Build()
-                .AsHttpCommandDelegate();
-            
+                .Build();
             
             services.AddSingleton(commandProcessor);
         }
