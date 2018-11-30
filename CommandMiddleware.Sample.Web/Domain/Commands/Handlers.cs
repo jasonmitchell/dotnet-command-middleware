@@ -22,8 +22,8 @@ namespace CommandMiddleware.Sample.Web.Commands
         public Task Handle(Checkout command, CommandContext context)
         {
             _logger.LogInformation($"Placing order for {command.Items.Count} items");
-
-            context.Response = "hello world";
+            context.Response = Guid.NewGuid();
+            
             return Task.CompletedTask;
         }
     }
