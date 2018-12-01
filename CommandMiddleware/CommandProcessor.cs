@@ -10,11 +10,10 @@ namespace CommandMiddleware
     {
         public delegate Task Middleware(object command, Func<Task> next);
         public delegate Task MiddlewareWithContext(object command, CommandContext context, Func<Task> next);
-        public delegate Task Handler<in TCommand>(TCommand command);
-        public delegate Task HandlerWithContext<in TCommand>(TCommand command, CommandContext context);
+        public delegate Task<CommandResult> Handler<in TCommand>(TCommand command);
         
         private readonly List<MiddlewareWithContext> _middleware = new List<MiddlewareWithContext>();
-        private readonly Dictionary<Type, Func<object, CommandContext, Task>> _handlers = new Dictionary<Type, Func<object, CommandContext, Task>>();
+        private readonly Dictionary<Type, Func<object, Task<CommandResult>>> _handlers = new Dictionary<Type, Func<object, Task<CommandResult>>>();
 
         public CommandProcessor()
         {
@@ -34,17 +33,12 @@ namespace CommandMiddleware
 
         public CommandProcessor Handle<TCommand>(Handler<TCommand> handler)
         {
-            return Handle<TCommand>((c, _) => handler(c));
-        }
-
-        public CommandProcessor Handle<TCommand>(HandlerWithContext<TCommand> handler)
-        {
             if (_handlers.ContainsKey(typeof(TCommand)))
             {
                 throw new CommandHandlerAlreadyRegisteredException(typeof(TCommand));
             }
             
-            _handlers.Add(typeof(TCommand), (c, ctx) => handler((TCommand) c, ctx));
+            _handlers.Add(typeof(TCommand), c => handler((TCommand)c));
             return this;
         }
 
@@ -93,7 +87,9 @@ namespace CommandMiddleware
         private async Task ExecuteCommand(object command, CommandContext context, Func<Task> _)
         {
             var handler = _handlers[command.GetType()];
-            await handler(command, context);
+            var commandResult = await handler(command);
+            
+            context.WithResult(commandResult);
         }
     }
 }

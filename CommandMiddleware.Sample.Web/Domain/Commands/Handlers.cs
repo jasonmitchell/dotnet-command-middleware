@@ -13,18 +13,16 @@ namespace CommandMiddleware.Sample.Web.Commands
             _logger = logger;
         }
         
-        public Task Handle(AddItemToBasket command)
+        public async Task<CommandResult> Handle(AddItemToBasket command)
         {
-            _logger.LogInformation($"Adding {command.ItemId} to basket");
-            return Task.CompletedTask;
+            await Task.Run(() => _logger.LogInformation($"Adding {command.ItemId} to basket"));
+            return Command.Handled();
         }
 
-        public Task Handle(Checkout command, CommandContext context)
+        public async Task<CommandResult> Handle(Checkout command)
         {
-            _logger.LogInformation($"Placing order for {command.Items.Count} items");
-            context.Response = Guid.NewGuid();
-            
-            return Task.CompletedTask;
+            await Task.Run(() => _logger.LogInformation($"Placing order for {command.Items.Count} items"));
+            return Command.Handled(Guid.NewGuid());
         }
     }
 }

@@ -19,12 +19,12 @@ namespace CommandMiddleware.Tests
                 .Handle<TestCommand>(c =>
                 {
                     handled = c;
-                    return Task.CompletedTask;
+                    return Task.FromResult(Command.Handled());
                 })
-                .Handle<OtherTestCommand>((c, ctx) =>
+                .Handle<OtherTestCommand>(c =>
                 {
                     handled = c;
-                    return Task.CompletedTask;
+                    return Task.FromResult(Command.Handled());
                 })
                 .Build();
             
@@ -50,9 +50,9 @@ namespace CommandMiddleware.Tests
         public void ThrowsExceptionWhenRegisteringDuplicateCommandHandlers()
         {
             var builder = new CommandProcessor()
-                .Handle<TestCommand>(_ => Task.CompletedTask);
+                .Handle<TestCommand>(_ => Task.FromResult(Command.Handled()));
 
-            Action action = () => builder.Handle<TestCommand>(_ => Task.CompletedTask);
+            Action action = () => builder.Handle<TestCommand>(_ => Task.FromResult(Command.Handled()));
             action.Should().Throw<CommandHandlerAlreadyRegisteredException>();
         }
 
@@ -66,7 +66,7 @@ namespace CommandMiddleware.Tests
                     middlewareExecuted = true;
                     await next();
                 })
-                .Handle<TestCommand>(_ => Task.CompletedTask)
+                .Handle<TestCommand>(_ => Task.FromResult(Command.Handled()))
                 .Build();
 
             await processor(new TestCommand());
@@ -93,7 +93,7 @@ namespace CommandMiddleware.Tests
                     middlewareExecuted.Add(3);
                     await next();
                 })
-                .Handle<TestCommand>(_ => Task.CompletedTask)
+                .Handle<TestCommand>(_ => Task.FromResult(Command.Handled()))
                 .Build();
 
             await processor(new TestCommand());
@@ -112,7 +112,7 @@ namespace CommandMiddleware.Tests
                 .Handle<TestCommand>(_ =>
                 {
                     handlerExecuted = true;
-                    return Task.CompletedTask;
+                    return Task.FromResult(Command.Handled());
                 })
                 .Build();
 
@@ -125,7 +125,7 @@ namespace CommandMiddleware.Tests
         {
             var processor = new CommandProcessor()
                 .Use((_, __) => throw new Exception())
-                .Handle<TestCommand>(_ => Task.CompletedTask)
+                .Handle<TestCommand>(_ => Task.FromResult(Command.Handled()))
                 .Build();
 
             Func<Task> action = () => processor(new TestCommand());

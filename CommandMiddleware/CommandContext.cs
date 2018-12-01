@@ -5,11 +5,16 @@ namespace CommandMiddleware
     public class CommandContext
     {
         public Type CommandType { get; }
-        public object Response { get; set; }
+        public object Response { get; private set; }
         
-        public CommandContext(Type commandType)
+        internal CommandContext(Type commandType)
         {
             CommandType = commandType;
+        }
+
+        internal void WithResult(CommandResult result)
+        {
+            Response = result.State;
         }
     }
 }
