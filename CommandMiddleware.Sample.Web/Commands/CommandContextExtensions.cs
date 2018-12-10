@@ -49,12 +49,12 @@ namespace CommandMiddleware.Sample.Web.Commands
 
         private static ActionResult OkOrNoContent<TResponse>(TResponse response)
         {
-            if (response != null)
+            if (response.Equals(Command.NoResponse))
             {
-                return new OkObjectResult(response);
+                return new NoContentResult();
             }
             
-            return new NoContentResult();
+            return new OkObjectResult(response);
         }
 
         private static ActionResult BadRequest(IEnumerable<DomainError> errors)
