@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace CommandMiddleware
 {
-    public delegate Task<CommandContext> CommandDelegate(object command);
+    public delegate Task<CommandResult> CommandDelegate(object command);
 
     public class CommandProcessor
     {
@@ -47,10 +47,10 @@ namespace CommandMiddleware
             _middleware.Add(ExecuteCommand);
 
             var pipeline = CreatePipeline(0);
-            return c => pipeline(c, new CommandContext(c.GetType()));
+            return c => pipeline(c, new CommandContext());
         }
 
-        private Func<object, CommandContext, Task<CommandContext>> CreatePipeline(int index)
+        private Func<object, CommandContext, Task<CommandResult>> CreatePipeline(int index)
         {
             return async (command, context) =>
             {
@@ -70,15 +70,16 @@ namespace CommandMiddleware
                 var middleware = _middleware[index];
                 await middleware(command, context, next);
 
-                return context;
+                return context.Result;
             };
         }
 
         private async Task RequireHandler(object command, CommandContext context, Func<Task> next)
         {
-            if (!_handlers.ContainsKey(command.GetType()))
+            var commandType = command.GetType();
+            if (!_handlers.ContainsKey(commandType))
             {
-                throw new CommandHandlerNotFoundException(context.CommandType);
+                throw new CommandHandlerNotFoundException(commandType);
             }
 
             await next();
@@ -89,7 +90,7 @@ namespace CommandMiddleware
             var handler = _handlers[command.GetType()];
             var commandResult = await handler(command);
             
-            context.WithResult(commandResult);
+            context.Result = commandResult;
         }
     }
 }

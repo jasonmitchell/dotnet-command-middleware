@@ -9,9 +9,9 @@ namespace CommandMiddleware.Sample.Web.Commands
     public class CommandActionResultBuilder
     {
         private readonly Dictionary<Type, Func<object, ActionResult>> _handlers = new Dictionary<Type, Func<object, ActionResult>>();
-        private readonly Task<CommandContext> _command;
+        private readonly Task<CommandResult> _command;
 
-        internal CommandActionResultBuilder(Task<CommandContext> command)
+        internal CommandActionResultBuilder(Task<CommandResult> command)
         {
             _command = command;
 
@@ -27,19 +27,19 @@ namespace CommandMiddleware.Sample.Web.Commands
 
         public async Task<ActionResult> ToActionResult()
         {
-            var context = await _command;
+            var result = await _command;
 
-            if (_handlers.TryGetValue(context.Response.GetType(), out var handler))
+            if (_handlers.TryGetValue(result.State.GetType(), out var handler))
             {
-                return handler(context.Response);
+                return handler(result.State);
             }
             
-            if (context.Response.Equals(Command.NoResponse))
+            if (result.State.Equals(Command.NoResponse))
             {
                 return new NoContentResult();
             }
             
-            return new OkObjectResult(context.Response);
+            return new OkObjectResult(result.State);
         }
         
         private static ActionResult BadRequest(IEnumerable<DomainError> errors)
