@@ -8,64 +8,14 @@ namespace CommandMiddleware.Sample.Web.Commands
 {
     public static class CommandContextExtensions
     {
-        public static Task<ActionResult> ToActionResult(this Task<CommandContext> command,
-            Func<object, ActionResult> onSuccess = null,
-            Func<IEnumerable<DomainError>, ActionResult> onDomainError = null)
+        public static CommandActionResultBuilder Match<T>(this Task<CommandContext> command, Func<T, ActionResult> handler)
         {
-            return command.ToActionResult<object>(onSuccess, onDomainError);
+            return new CommandActionResultBuilder(command).Match(handler);
         }
         
-        public static async Task<ActionResult> ToActionResult<TResponse>(this Task<CommandContext> command,
-            Func<TResponse, ActionResult> onSuccess = null,
-            Func<IEnumerable<DomainError>, ActionResult> onDomainError = null)
+        public static Task<ActionResult> ToActionResult(this Task<CommandContext> command)
         {
-            var context = await command;
-
-            if (onSuccess == null)
-            {
-                onSuccess = OkOrNoContent;
-            }
-            
-            if (onDomainError == null)
-            {
-                onDomainError = BadRequest;
-            }
-
-            switch (context.Response)
-            {
-                case TResponse response:
-                    return onSuccess(response);
-                
-                case DomainError error:
-                    return onDomainError(new[] {error});
-                
-                case IEnumerable<DomainError> errors:
-                    return onDomainError(errors);
-                
-                default:
-                    return new NoContentResult();
-            }
-        }
-
-        private static ActionResult OkOrNoContent<TResponse>(TResponse response)
-        {
-            if (response.Equals(Command.NoResponse))
-            {
-                return new NoContentResult();
-            }
-            
-            return new OkObjectResult(response);
-        }
-
-        private static ActionResult BadRequest(IEnumerable<DomainError> errors)
-        {
-            var modelState = new ModelStateDictionary();
-            foreach (var error in errors)
-            {
-                modelState.AddModelError(error.Key, error.Message);
-            }
-            
-            return new BadRequestObjectResult(modelState);
+            return new CommandActionResultBuilder(command).ToActionResult();
         }
     }
 }

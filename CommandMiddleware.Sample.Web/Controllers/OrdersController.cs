@@ -24,12 +24,9 @@ namespace CommandMiddleware.Sample.Web.Controllers
         [HttpPost, Route("checkout")]
         public async Task<ActionResult> Checkout(Checkout command)
         {
-            return await _commandProcessor(command).ToActionResult<Guid>(
-                id =>
-                {
-                    Response.Headers["Location"] = id.ToString();
-                    return NoContent();
-                });
+            return await _commandProcessor(command)
+                .Match<Guid>(id => Created($"/orders/{id}", null))
+                .ToActionResult();
         }
     }
 }
